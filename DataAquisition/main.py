@@ -16,7 +16,10 @@ app = FastAPI()
 # base de datos - parametros para poderse conectar a db -------------
 
 # DATABASE_URL = "postgresql://owner:password@localhost/neondb" <- sigue ese formato 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/neondb")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "postgresql://neondb_owner:npg_Wxv2fpum7VcA@ep-solitary-shadow-aios0gdj-pooler.c-4.us-east-1.aws.neon.tech/neondb"
+    )
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 SessionLocal = sessionmaker(bind=engine)
