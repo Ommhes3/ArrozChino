@@ -1,9 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
-
 #include <HTTPClient.h>
 #include <Arduino_JSON.h>
-
 #include <PubSubClient.h>
 
 // MQTT 
@@ -248,8 +246,7 @@ void serialEvent() {
       GETrequest();
 
     } else if(data == "POSTSINGLE") {
-      takeSingleSample();
-
+      sendSingleSample();
     } else if(data == "POSTFULL") {
       takeFullSample(); 
     }

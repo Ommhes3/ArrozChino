@@ -30,19 +30,18 @@ SessionLocal = sessionmaker(bind=engine)
 class ReadingTable(Base):
     __tablename__ = "Lecturas"
     id = Column(Integer, primary_key=True, index=True)
-    value = Column(Integer)
-    timestamp = Column(Integer)
+    pesoKg = Column(Integer)
+    horaToma = Column(Integer)
     deviceName = Column(String)
     units = Column(String)
-
 
 # modelo de datos -----------------
 
 class Reading(BaseModel):
-    value: int
-    timestamp: int
+    pesoKg: float
+    horaToma: int
     deviceName: str
-    units : str
+    units: str
 
 # el dato que el cliente debe mandar para recibirlo por la endpoint (o sea la funcion)
 # {
@@ -67,28 +66,11 @@ async def example():
 
 # http://localhost:8000/readings
 @app.post("/readings")
-async def receive_reading(reading:Reading):
-
-    db = SessionLocal() # abro sesion en db
-
-    # crea el dato a guardar tipo reading 
-    reading_to_save = ReadingTable(
-        value = reading.value,
-        timestamp = reading.timestamp,
-        deviceName = reading.deviceName,
-        units = reading.units
-    )
-
-    db.add(reading_to_save) # add del dato a la tabla
-    db.commit() # el commit es como en git
-    db.refresh(reading_to_save) # refresh para actualizar dato y aseguarrse que llego a la db
-    db.close()
-
-    return {
-        "message": "Reading recibida",
-        "value": reading.value,
-        "timestamp" : reading.timestamp, 
-    }
+class Reading(BaseModel):
+    pesoKg: float
+    horaToma: int
+    deviceName: str
+    units: str
 
 # lista de readings TEST
 # [
@@ -97,28 +79,11 @@ async def receive_reading(reading:Reading):
 # {"deviceName" : "temp03", "value" : 324, "timestamp" : 210, "units" : "celsius"}
 # ]
 
+
 # http://localhost:8000/readings/batch
 
 # batch es un arreglo de readings, o sea una lista de objetos del tipo reading
-@app.post("/readings/batch")
-async def receive_batch(batch:list[Reading]):
-    db = SessionLocal()
 
-    readings_to_save = [ReadingTable(
-        value = reading.value,
-        timestamp = reading.timestamp,
-        deviceName = reading.deviceName,
-        units = reading.units
-    ) for reading in batch]
-
-    db.add_all(readings_to_save) # add del dato a la tabla
-    db.commit()
-    db.close()
-
-
-    return {
-        "message": "Batch recibida",
-    }
 
 # METODO PARA RECIBIR LA LISTA EN LA DB
 
