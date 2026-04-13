@@ -8,16 +8,16 @@
 // MQTT
 const char* mqttServer = "broker.emqx.io";
 const int mqttPort = 1883;
-const char* clientName = "yrtinatgath";
+const char* clientName = "abecedeHIHIHI";
 const char* inboundTopic = "telematica/inbound";
 const char* outboundTopic = "telematica/outbound";
 
 // WiFi
-const char* ssid = "LABREDES";
-const char* password = "F0rmul4-1";
+const char* ssid = "Xiaomi 14T";
+const char* password = "12345678";
 
 // URL servidor
-String BASE_URL = "http://192.168.130.42:8000/";
+String BASE_URL = "http://10.68.103.43:8000/";
 
 // NTP (hora real)
 const char* ntpServer = "pool.ntp.org";
@@ -26,6 +26,7 @@ const int daylightOffset_sec = 0;
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
+
 
 // ---------------- MQTT ----------------
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -57,15 +58,22 @@ void connectToBroker(){
   keepAlive();
 }
 
+
 // ---------------- WIFI ----------------
 void connectToWifi(){
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  Serial.println("Conectandose al WiFi");
 
   while (WiFi.status() != WL_CONNECTED) {
+    Serial.print('.');
     delay(1000);
   }
+
+  Serial.println("Connectado exitosamente, YUMMY!");
+  Serial.println(WiFi.localIP());
 }
+
 
 // ---------------- HORA REAL ----------------
 String getHoraActual() {
@@ -79,27 +87,31 @@ String getHoraActual() {
   return String(buffer);
 }
 
+
 // ---------------- HTTP ----------------
 void POSTrequest(String url, String data) {
   HTTPClient http;
-  http.begin(url);
+  http.begin(url.c_str());
+
   http.addHeader("Content-Type", "application/json");
 
   int httpResponseCode = http.POST(data);
 
-  if (httpResponseCode > 0) {
-    String response = http.getString();
+  if (httpResponseCode == 200) {
+    String responseBody = http.getString();
+
     Serial.println("Respuesta del servidor:");
-    Serial.println(response);
+    Serial.println(responseBody);
   } else {
-    Serial.println("Error de conexión:");
+    Serial.println("Error de conexion HTTP:");
     Serial.println(http.errorToString(httpResponseCode));
   }
 
   http.end();
 }
 
-// ---------------- MUESTRA ----------------
+
+// ---------------- MUESTRA UNICA ----------------
 String takeSingleSample(){
   float pesoKg = random(100, 500) / 100.0;
   int horaToma = millis() / 1000;
@@ -113,6 +125,7 @@ String takeSingleSample(){
   return JSON.stringify(sample);
 }
 
+
 void sendSingleSample(){
   String json = takeSingleSample();
   Serial.println(json);
@@ -120,6 +133,7 @@ void sendSingleSample(){
   String url = BASE_URL + "readings";
   POSTrequest(url, json);
 }
+
 
 // ---------------- SETUP ----------------
 void setup() {
@@ -130,17 +144,20 @@ void setup() {
   connectToBroker();
 }
 
+
 // ---------------- LOOP ----------------
 void loop() {
   mqttClient.loop();
   keepAlive();
 }
 
+
 // ---------------- SERIAL ----------------
 void serialEvent() {
   if (Serial.available() > 0) {
 
     String data = Serial.readStringUntil('\n');
+    Serial.println(data);
 
     if(data == "POSTSINGLE") {
       sendSingleSample();
