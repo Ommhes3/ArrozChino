@@ -17,7 +17,7 @@ const char* ssid = "LABREDES";
 const char* password = "F0rmul4-1";
 
 // URL servidor
-String BASE_URL = "http://54.227.168.241:8000/";
+String BASE_URL = "http://192.168.130.42:8000/";
 
 // NTP (hora real)
 const char* ntpServer = "pool.ntp.org";
@@ -35,7 +35,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 
   if(message == "sayhello"){
-    mqttClient.publish(outboundTopic, "ESP32 listo uwu ✨");
+    mqttClient.publish(outboundTopic, "ESP32 listo uwu");
   }
 }
 
@@ -87,24 +87,17 @@ void POSTrequest(String url, String data) {
 
   int httpResponseCode = http.POST(data);
 
-  if(httpResponseCode == 200) {
-    Serial.println("Enviado bien ");
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("Respuesta del servidor:");
+    Serial.println(response);
   } else {
-    Serial.println("Error HTTP ");
+    Serial.println("Error de conexión:");
+    Serial.println(http.errorToString(httpResponseCode));
   }
 
   http.end();
 }
-// ---------------- VOID MUESTRA ----------------
-void sendSingleSample(float peso){
-  String json = takeSingleSample(peso);
-  Serial.println(json);
-
-  String url = BASE_URL + "readings";
-  POSTrequest(url, json);
-}
-
-
 
 // ---------------- MUESTRA ----------------
 String takeSingleSample(){
@@ -133,7 +126,7 @@ void setup() {
   Serial.begin(115200);
 
   connectToWifi();
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer); // 🔥 hora real
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer); //  hora real
   connectToBroker();
 }
 
