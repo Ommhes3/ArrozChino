@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-
+from sqlalchemy import Float
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -11,7 +11,7 @@ app = FastAPI()
 # ---------------- DB ----------------
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://neondb_owner:npg_J2q0ambuRelS@ep-frosty-rice-anqnftdm-pooler.c-6.us-east-1.aws.neon.tech/neondb"
+    "postgresql://neondb_owner:npg_cPhJeWza7fx2@ep-orange-cherry-anfiexh5-pooler.c-6.us-east-1.aws.neon.tech/neondb"
 )
 
 engine = create_engine(DATABASE_URL)
@@ -23,15 +23,15 @@ class ReadingTable(Base):
     __tablename__ = "lecturas"
 
     id = Column(Integer, primary_key=True, index=True)
-    value = Column(Integer)
-    timestamp = Column(Integer)
+    pesoKg = Column(Float)
+    horaToma = Column(String)
     deviceName = Column(String)
     units = Column(String)
 
 # ---------------- MODELO ----------------
 class Reading(BaseModel):
-    value: int
-    timestamp: int
+    pesoKg: float
+    horaToma: str
     deviceName: str
     units: str
 
@@ -39,17 +39,17 @@ class Reading(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "Hola mundo 😸"}
+    return {"message": "Hola mundo"}
 
-# 🔥 RECIBE UNA LECTURA
+# RECIBE UNA LECTURA
 @app.post("/readings")
 async def receive_reading(reading: Reading):
 
     db = SessionLocal()
 
     reading_to_save = ReadingTable(
-        value=reading.value,
-        timestamp=reading.timestamp,
+        pesoKg=reading.pesoKg,
+        horaToma=reading.horaToma,
         deviceName=reading.deviceName,
         units=reading.units
     )
@@ -61,11 +61,11 @@ async def receive_reading(reading: Reading):
 
     return {
         "message": "Reading recibida",
-        "value": reading.value,
-        "timestamp": reading.timestamp
+        "pesoKg": reading.pesoKg,
+        "horaToma": reading.horaToma
     }
 
-# 🔥 RECIBE BATCH
+# RECIBE BATCH
 @app.post("/readings/batch")
 async def receive_batch(batch: list[Reading]):
 
@@ -73,8 +73,8 @@ async def receive_batch(batch: list[Reading]):
 
     readings_to_save = [
         ReadingTable(
-            value=r.value,
-            timestamp=r.timestamp,
+            pesoKg=r.pesoKg,
+            horaToma=r.horaToma,
             deviceName=r.deviceName,
             units=r.units
         )
@@ -85,7 +85,7 @@ async def receive_batch(batch: list[Reading]):
     db.commit()
     db.close()
 
-    return {"message": "Batch recibido 🚀"}
+    return {"message": "Batch recibido "}
 
 # ---------------- START ----------------
 @app.on_event("startup")
