@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+Backend/__pycache__/
+Backend/LogicPackage/__pycache__/
+Backend/Test/__pycache__/
