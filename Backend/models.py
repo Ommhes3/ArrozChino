@@ -2,7 +2,8 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
-from database import Base
+
+from database.database import Base
 
 
 class User(Base):
@@ -40,7 +41,7 @@ class Feeder(Base):
 
     donations = relationship("Donation", back_populates="feeder")
     events = relationship("DeviceEvent", back_populates="feeder")
-
+    readings = relationship("Reading", back_populates="feeder")
 
 class Donation(Base):
     __tablename__ = "donations"
@@ -85,3 +86,22 @@ class DeviceEvent(Base):
 
     feeder = relationship("Feeder", back_populates="events")
     donation = relationship("Donation", back_populates="events")
+
+
+class Reading(Base):
+    __tablename__ = "readings"
+
+    reading_id = Column(String, primary_key=True, index=True)
+
+    feeder_id = Column(String, ForeignKey("feeders.feeder_id"), nullable=False, index=True)
+
+    food_level = Column(Float, nullable=False)
+    weight = Column(Float, nullable=True)
+
+    device_name = Column(String, nullable=True)
+    units = Column(String, default="kg")
+
+    taken_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    feeder = relationship("Feeder", back_populates="readings")

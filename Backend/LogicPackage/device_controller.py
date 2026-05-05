@@ -149,25 +149,29 @@ class DeviceController:
 
         feeder.food_level = food_level
 
-        event = DeviceEvent(
-            event_id=str(uuid4()),
-            feeder_id=feeder_id,
-            event_type="sensor_reading",
-            description=description or "Lectura recibida desde sensor",
-            food_level=food_level,
-            weight=weight,
-            status="received"
-        )
+        alert_event_id = None
 
-        db.add(event)
+        if feeder.food_limit and food_level <= feeder.food_limit * 0.2:
+            event = DeviceEvent(
+                event_id=str(uuid4()),
+                feeder_id=feeder_id,
+                event_type="low_food_level",
+                description=description or "Nivel de comida bajo",
+                food_level=food_level,
+                weight=weight,
+                status="alert"
+            )
+
+            db.add(event)
+            alert_event_id = event.event_id
 
         return {
             "success": True,
-            "event_id": event.event_id,
             "feeder_id": feeder_id,
             "food_level": food_level,
             "weight": weight,
-            "message": "Lectura del sensor registrada correctamente"
+            "alert_event_id": alert_event_id,
+            "message": "Estado del comedero actualizado desde lectura"
         }
 
     def update_stream_url(

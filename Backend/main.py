@@ -1,93 +1,83 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-from sqlalchemy import Float
-from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.orm import declarative_base, sessionmaker
 
-import os
+from database.database import Base, SessionLocal, engine
+from models import Feeder
 
-app = FastAPI()
-
-# ---------------- DB ----------------
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://neondb_owner:npg_cPhJeWza7fx2@ep-orange-cherry-anfiexh5-pooler.c-6.us-east-1.aws.neon.tech/neondb"
+from Modules import (
+    users, 
+    feeders, 
+    donations, 
+    device_events, 
+    device, 
+    readings
 )
 
-engine = create_engine(DATABASE_URL)
-Base = declarative_base()
-SessionLocal = sessionmaker(bind=engine)
+app = FastAPI(
+    title="Comedor Inteligente API",
+    description="Backend base y estructura DeviceController para proyecto integrador",
+    version="1.0.0"
+)
 
-# ---------------- TABLA ----------------
-class ReadingTable(Base):
-    __tablename__ = "lecturas"
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
+    seed_initial_data()
 
-    id = Column(Integer, primary_key=True, index=True)
-    pesoKg = Column(Float)
-    horaToma = Column(String)
-    deviceName = Column(String)
-    units = Column(String)
 
-# ---------------- MODELO ----------------
-class Reading(BaseModel):
-    pesoKg: float
-    horaToma: str
-    deviceName: str
-    units: str
+def seed_initial_data():
+    db = SessionLocal()
 
-# ---------------- ENDPOINTS ----------------
+    try:
+        feeder = db.get(Feeder, "feeder-demo")
+
+        if not feeder:
+            demo_feeder = Feeder(
+                feeder_id="feeder-demo",
+                name="Comedero Demo",
+                location="Zona principal",
+                is_active=True,
+                food_level=5.0,
+                food_limit=10.0,
+                price_per_donation=10.0,
+                portion_per_donation=0.25,
+                stream_url="http://esp32cam.local/stream"
+            )
+
+            db.add(demo_feeder)
+            db.commit()
+
+    finally:
+        db.close()
+
 
 @app.get("/")
-async def root():
-    return {"message": "Hola mundo"}
-
-# RECIBE UNA LECTURA
-@app.post("/readings")
-async def receive_reading(reading: Reading):
-
-    db = SessionLocal()
-
-    reading_to_save = ReadingTable(
-        pesoKg=reading.pesoKg,
-        horaToma=reading.horaToma,
-        deviceName=reading.deviceName,
-        units=reading.units
-    )
-
-    db.add(reading_to_save)
-    db.commit()
-    db.refresh(reading_to_save)
-    db.close()
-
+def root():
     return {
-        "message": "Reading recibida",
-        "pesoKg": reading.pesoKg,
-        "horaToma": reading.horaToma
+        "message": "API del Comedor Inteligente activa",
+        "docs": "/docs",
+        "tables": [
+            "users",
+            "feeders",
+            "donations",
+            "readings",
+            "device_events"
+        ]
     }
 
-# RECIBE BATCH
-@app.post("/readings/batch")
-async def receive_batch(batch: list[Reading]):
 
-    db = SessionLocal()
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "database": "postgresql"
+    }
 
-    readings_to_save = [
-        ReadingTable(
-            pesoKg=r.pesoKg,
-            horaToma=r.horaToma,
-            deviceName=r.deviceName,
-            units=r.units
-        )
-        for r in batch
-    ]
 
-    db.add_all(readings_to_save)
-    db.commit()
-    db.close()
 
-    return {"message": "Batch recibido "}
-
-# ---------------- START ----------------
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=engine)
+# Routers
+app.include_router(users.router)
+app.include_router(feeders.router)
+app.include_router(donations.router)
+app.include_router(device.router)
+app.include_router(device_events.router)
+app.include_router(readings.router)

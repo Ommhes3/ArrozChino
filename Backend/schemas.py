@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -63,3 +64,12 @@ class SensorReadingCreate(BaseModel):
 class StreamUpdate(BaseModel):
     feeder_id: str = "feeder-demo"
     stream_url: str
+
+
+class ReadingCreate(BaseModel):
+    feeder_id: str = "feeder-demo"
+    food_level: float = Field(..., ge=0)
+    weight: Optional[float] = Field(default=None, ge=0)
+    device_name: Optional[str] = None
+    units: str = "kg"
+    taken_at: Optional[datetime] = None

@@ -3,7 +3,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from models import DeviceEvent, Donation, Feeder
-from payment import PaymentService
+from ExternalServices.payment import PaymentService
 
 
 class DonationManager:
