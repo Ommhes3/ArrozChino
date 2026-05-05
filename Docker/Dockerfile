@@ -5,7 +5,7 @@ WORKDIR /app
 COPY Docker/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY Backend/main.py .
+COPY Backend/ .
 
 EXPOSE 8000
 
