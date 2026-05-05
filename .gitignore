@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+Backend/__pycache__/
+Backend/LogicPackage/__pycache__/
+Backend/Test/__pycache__/
+
+
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

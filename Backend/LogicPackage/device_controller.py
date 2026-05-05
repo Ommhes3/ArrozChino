@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from models import DeviceEvent, Feeder
 
 
-class DeviceController: 
+class DeviceController:
     def check_device_status(self, db: Session, feeder_id: str) -> dict:
         feeder = db.get(Feeder, feeder_id)
 
