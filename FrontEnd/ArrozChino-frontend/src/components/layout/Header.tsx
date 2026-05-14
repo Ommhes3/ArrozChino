@@ -1,155 +1,287 @@
+import { useMemo } from "react";
+import { getCurrentUser, logoutUser } from "../../services/userService";
+
 type HeaderProps = {
-  isLive?: boolean;
   logoSrc?: string;
+  isLive?: boolean;
 };
 
+const guestPhrases = [
+  "¡Bienvenido!",
+  "¡Mira esos michis!",
+  "¡Comedero online!",
+  "¡Donar da suerte!",
+  "¡Miau en vivo!",
+  "¡Hay un perro infiltrado!",
+  "¿¡Sabias que Nicol es lesbiana!?",
+];
+
+const userPhrases = [
+  "¡Hola, {name}!",
+  "¡Bienvenido, {name}!",
+  "¡Qué hubo, {name}!",
+  "¡Michi te saluda, {name}!",
+  "¡A donar, {name}!",
+  "¡Gracias por volver, {name}!",
+  "¡Hay un perro infiltrado, {name}!",
+  "¿¡Sabias!? Nicol es lesbiana, {name}",
+];
+
+function getRandomItem(list: string[]) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 export default function Header({
-  isLive = true,
   logoSrc = "/logoPng.png",
+  isLive = true,
 }: HeaderProps) {
+  const currentUser = getCurrentUser();
+
+  const splashText = useMemo(() => {
+    if (currentUser) {
+      return getRandomItem(userPhrases).replace("{name}", currentUser.name);
+    }
+
+    return getRandomItem(guestPhrases);
+  }, [currentUser?.user_id]);
+
+  function handleLogout() {
+    logoutUser();
+    window.location.href = "/login";
+  }
+
   return (
     <header
       style={{
+        width: "100%",
         position: "sticky",
         top: 0,
         zIndex: 50,
-        padding: "8px 12px 12px",
+        padding: "10px 12px",
         backgroundColor: "#FFFFFF",
+        boxSizing: "border-box",
       }}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: "760px",
+          maxWidth: "620px",
           margin: "0 auto",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          padding: "10px 12px",
+          padding: "10px 14px",
           border: "4px solid black",
-          borderRadius: "26px",
-          backgroundColor: "#FFFFFF",
+          borderRadius: "24px",
+          backgroundColor: "#FFFDF7",
           boxShadow: "5px 5px 0px #000",
           boxSizing: "border-box",
         }}
       >
-        {/* Logo + textos */}
-        <div
+        {/* Logo + texto */}
+        <a
+          href="/"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "10px",
+            color: "black",
+            textDecoration: "none",
             minWidth: 0,
-            flex: "1 1 auto",
           }}
         >
-          <a
-  href="/"
-  aria-label="Ir al inicio"
-  style={{
-    flexShrink: 0,
-    display: "block",
-    lineHeight: 0,
-    cursor: "pointer",
-    overflow: "visible",
-  }}
->
-  <img
-    src={logoSrc}
-    alt="Logo gatito"
-    style={{
-      width: "clamp(58px, 13vw, 105px)",
-      height: "clamp(58px, 13vw, 105px)",
-      objectFit: "contain",
-      display: "block",
-      transform: "scale(1)",
-      transformOrigin: "center",
-      transition: "transform 180ms ease, filter 180ms ease",
-      filter: "drop-shadow(1px 1px 0px #000)",
-    }}
-    onMouseEnter={(event) => {
-      event.currentTarget.style.transform = "scale(1.22) rotate(-4deg)";
-      event.currentTarget.style.filter = "drop-shadow(3px 3px 0px #000)";
-    }}
-    onMouseLeave={(event) => {
-      event.currentTarget.style.transform = "scale(1)";
-      event.currentTarget.style.filter = "drop-shadow(1px 1px 0px #000)";
-    }}
-  />
-</a>
+          <img
+            src={logoSrc}
+            alt="Logo gato"
+            style={{
+              width: "62px",
+              height: "62px",
+              objectFit: "contain",
+              flexShrink: 0,
+              transition: "transform 160ms ease",
+              filter: "drop-shadow(2px 2px 0px #000)",
+            }}
+            onMouseEnter={(event) => {
+              event.currentTarget.style.transform = "scale(1.14) rotate(-4deg)";
+            }}
+            onMouseLeave={(event) => {
+              event.currentTarget.style.transform = "scale(1) rotate(0deg)";
+            }}
+          />
 
           <div
             style={{
               minWidth: 0,
-              overflow: "hidden",
+              position: "relative",
+              paddingTop: "4px",
             }}
           >
+            {/* Texto estilo Minecraft splash */}
             <h1
+              className="minecraft-splash"
               style={{
                 margin: 0,
-                fontSize: "clamp(22px, 5vw, 34px)",
+                color: "#FFE600",
+                fontSize: "20px",
+                fontWeight: 800,
                 lineHeight: 1,
-                fontWeight: 900,
-                color: "black",
                 whiteSpace: "nowrap",
+                textShadow:
+                  "2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000",
+                letterSpacing: "-0.5px",
               }}
             >
-              Bienvenido
+              {splashText}
             </h1>
 
             <p
               style={{
                 margin: "6px 0 0",
-                fontSize: "clamp(13px, 3.2vw, 18px)",
-                lineHeight: 1,
-                fontWeight: 900,
                 color: isLive ? "#2E9E42" : "#6B7280",
+                fontSize: "14px",
+                fontWeight: 900,
+                lineHeight: 1,
                 whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
               }}
             >
-              {isLive ? "Transmisión en vivo" : "Transmisión pausada"}
+              {isLive ? "Transmisión en vivo" : "Modo descanso"}
             </p>
           </div>
-        </div>
+        </a>
 
-        {/* Estado */}
+        {/* Estado + sesión */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "6px",
-            padding: "clamp(7px, 2vw, 10px) clamp(9px, 2.5vw, 14px)",
-            border: "3px solid black",
-            borderRadius: "18px",
-            backgroundColor: "white",
-            boxShadow: "2px 2px 0px #000",
+            gap: "8px",
             flexShrink: 0,
           }}
         >
-          <span
+          <div
             style={{
-              width: "clamp(9px, 2.5vw, 12px)",
-              height: "clamp(9px, 2.5vw, 12px)",
-              borderRadius: "999px",
-              backgroundColor: isLive ? "#39B54A" : "#9CA3AF",
-            }}
-          />
-
-          <span
-            style={{
-              fontSize: "clamp(12px, 3vw, 16px)",
-              fontWeight: 900,
-              color: "black",
-              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 10px",
+              border: "3px solid black",
+              borderRadius: "18px",
+              backgroundColor: "#FFFFFF",
+              boxShadow: "2px 2px 0px #000",
             }}
           >
-            {isLive ? "En vivo" : "Descanso"}
-          </span>
+            <span
+              style={{
+                width: "10px",
+                height: "10px",
+                borderRadius: "999px",
+                backgroundColor: isLive ? "#39B54A" : "#9CA3AF",
+              }}
+            />
+
+            <span
+              style={{
+                color: "black",
+                fontSize: "13px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isLive ? "En vivo" : "Descanso"}
+            </span>
+          </div>
+
+          {currentUser ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                padding: "8px 10px",
+                border: "3px solid black",
+                borderRadius: "18px",
+                backgroundColor: "#FFB7D8",
+                color: "black",
+                fontSize: "13px",
+                fontWeight: 900,
+                cursor: "pointer",
+                boxShadow: "2px 2px 0px #000",
+                transition: "transform 160ms ease, box-shadow 160ms ease",
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.transform =
+                  "scale(1.05) rotate(-1deg)";
+                event.currentTarget.style.boxShadow = "3px 3px 0px #000";
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.transform = "scale(1)";
+                event.currentTarget.style.boxShadow = "2px 2px 0px #000";
+              }}
+            >
+              Salir
+            </button>
+          ) : (
+            <a
+              href="/login"
+              style={{
+                padding: "8px 10px",
+                border: "3px solid black",
+                borderRadius: "18px",
+                backgroundColor: "#BDEEFF",
+                color: "black",
+                fontSize: "13px",
+                fontWeight: 900,
+                textDecoration: "none",
+                boxShadow: "2px 2px 0px #000",
+                transition: "transform 160ms ease, box-shadow 160ms ease",
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.transform =
+                  "scale(1.05) rotate(-1deg)";
+                event.currentTarget.style.boxShadow = "3px 3px 0px #000";
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.transform = "scale(1)";
+                event.currentTarget.style.boxShadow = "2px 2px 0px #000";
+              }}
+            >
+              Ingresar
+            </a>
+          )}
         </div>
       </div>
+
+      <style>
+  {`
+    @keyframes splashPulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.08);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .minecraft-splash {
+      animation: splashPulse 1.3s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    @media (max-width: 560px) {
+      .minecraft-splash {
+        font-size: 10px !important;
+        max-width: 135px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  `}
+</style>
     </header>
   );
 }
