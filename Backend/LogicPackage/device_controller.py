@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from models import DeviceEvent, Feeder
+from models import DeviceEvent, Donation, Feeder
 
 
 class DeviceController:
@@ -93,12 +93,104 @@ class DeviceController:
                 "feeder_id": feeder_id
             }
 
+        # Validar primero si la donación existe.
+        # Esto evita errores 500 por llave foránea cuando se registra el evento.
+        if donation_id:
+            donation = db.get(Donation, donation_id)
+
+            if not donation:
+                return {
+                    "success": False,
+                    "message": "La donación indicada no existe",
+                    "feeder_id": feeder_id,
+                    "donation_id": donation_id,
+                    "status": "failed"
+                }
+
+        if not feeder.is_active:
+            event = DeviceEvent(
+                event_id=str(uuid4()),
+                feeder_id=feeder_id,
+                donation_id=donation_id,
+                event_type="dispenser_activation_failed",
+                command="ACTIVATE_DISPENSER",
+                description="No se pudo activar el dispensador porque el comedero está inactivo",
+                food_level=feeder.food_level,
+                weight=0,
+                status="failed"
+            )
+
+            db.add(event)
+
+            return {
+                "success": False,
+                "event_id": event.event_id,
+                "feeder_id": feeder_id,
+                "status": "failed",
+                "message": "No se puede activar el dispensador porque el comedero está inactivo"
+            }
+
         amount_to_dispense = food_amount
 
         if amount_to_dispense is None:
             amount_to_dispense = feeder.portion_per_donation or 0
 
-        new_food_level = feeder.food_level - amount_to_dispense
+        if amount_to_dispense <= 0:
+            event = DeviceEvent(
+                event_id=str(uuid4()),
+                feeder_id=feeder_id,
+                donation_id=donation_id,
+                event_type="dispenser_activation_failed",
+                command="ACTIVATE_DISPENSER",
+                description="No se pudo activar el dispensador porque la cantidad a dispensar no es válida",
+                food_level=feeder.food_level,
+                weight=amount_to_dispense,
+                status="failed"
+            )
+
+            db.add(event)
+
+            return {
+                "success": False,
+                "event_id": event.event_id,
+                "feeder_id": feeder_id,
+                "food_amount": amount_to_dispense,
+                "status": "failed",
+                "message": "La cantidad de comida a dispensar debe ser mayor a 0"
+            }
+
+        if feeder.food_level <= 0:
+            event = DeviceEvent(
+                event_id=str(uuid4()),
+                feeder_id=feeder_id,
+                donation_id=donation_id,
+                event_type="dispenser_activation_failed",
+                command="ACTIVATE_DISPENSER",
+                description="No se pudo activar el dispensador porque no hay comida disponible",
+                food_level=feeder.food_level,
+                weight=0,
+                status="failed"
+            )
+
+            db.add(event)
+
+            return {
+                "success": False,
+                "event_id": event.event_id,
+                "feeder_id": feeder_id,
+                "current_food_level": feeder.food_level,
+                "status": "failed",
+                "message": "No hay comida disponible para dispensar"
+            }
+
+        real_dispensed_amount = amount_to_dispense
+        activation_status = "activated"
+
+        if amount_to_dispense > feeder.food_level:
+            real_dispensed_amount = feeder.food_level
+            activation_status = "partial"
+
+        new_food_level = feeder.food_level - real_dispensed_amount
 
         if new_food_level < 0:
             new_food_level = 0
@@ -113,8 +205,8 @@ class DeviceController:
             command="ACTIVATE_DISPENSER",
             description="Dispensador activado desde DeviceController",
             food_level=feeder.food_level,
-            weight=amount_to_dispense,
-            status="activated"
+            weight=real_dispensed_amount,
+            status=activation_status
         )
 
         db.add(event)
@@ -124,10 +216,17 @@ class DeviceController:
             "event_id": event.event_id,
             "feeder_id": feeder_id,
             "donation_id": donation_id,
-            "food_amount": amount_to_dispense,
+
+            # Compatibilidad con tests y código anterior
+            "food_amount": real_dispensed_amount,
+
+            # Campos más claros para el nuevo flujo
+            "requested_food_amount": amount_to_dispense,
+            "dispensed_food_amount": real_dispensed_amount,
+
             "new_food_level": feeder.food_level,
-            "status": "activated",
-            "message": "Dispensador activado correctamente en modo mock"
+            "status": activation_status,
+            "message": "Dispensador activado correctamente"
         }
 
     def register_sensor_reading(
@@ -149,29 +248,44 @@ class DeviceController:
 
         feeder.food_level = food_level
 
+        reading_event = DeviceEvent(
+            event_id=str(uuid4()),
+            feeder_id=feeder_id,
+            event_type="sensor_reading",
+            description=description or "Lectura recibida desde sensor",
+            command=None,
+            food_level=food_level,
+            weight=weight,
+            status="received"
+        )
+
+        db.add(reading_event)
+
         alert_event_id = None
 
         if feeder.food_limit and food_level <= feeder.food_limit * 0.2:
-            event = DeviceEvent(
+            alert_event = DeviceEvent(
                 event_id=str(uuid4()),
                 feeder_id=feeder_id,
                 event_type="low_food_level",
-                description=description or "Nivel de comida bajo",
+                description="Nivel de comida bajo",
+                command=None,
                 food_level=food_level,
                 weight=weight,
                 status="alert"
             )
 
-            db.add(event)
-            alert_event_id = event.event_id
+            db.add(alert_event)
+            alert_event_id = alert_event.event_id
 
         return {
             "success": True,
+            "event_id": reading_event.event_id,
             "feeder_id": feeder_id,
             "food_level": food_level,
             "weight": weight,
             "alert_event_id": alert_event_id,
-            "message": "Estado del comedero actualizado desde lectura"
+            "message": "Lectura del sensor registrada correctamente"
         }
 
     def update_stream_url(
