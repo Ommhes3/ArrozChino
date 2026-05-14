@@ -1,7 +1,8 @@
 from fastapi import FastAPI
-
 from database.database import Base, SessionLocal, engine
 from models import Feeder
+from fastapi.middleware.cors import CORSMiddleware
+from Modules import users, feeders, donations, device_events, device, readings
 
 from Modules import (
     users, 
@@ -16,6 +17,14 @@ app = FastAPI(
     title="Comedor Inteligente API",
     description="Backend base y estructura DeviceController para proyecto integrador",
     version="1.0.0"
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.on_event("startup")
@@ -78,6 +87,7 @@ def health_check():
 app.include_router(users.router)
 app.include_router(feeders.router)
 app.include_router(donations.router)
-app.include_router(device.router)
 app.include_router(device_events.router)
+app.include_router(device.router)
 app.include_router(readings.router)
+

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from pydantic import BaseModel, Field
 
 from pydantic import BaseModel, Field
 
@@ -73,3 +74,26 @@ class ReadingCreate(BaseModel):
     device_name: Optional[str] = None
     units: str = "kg"
     taken_at: Optional[datetime] = None
+
+class EventCreate(BaseModel):
+    feeder_id: str = "feeder-demo"
+    donation_id: Optional[str] = None
+    event_type: str
+    description: Optional[str] = None
+    command: Optional[str] = None
+    food_level: Optional[float] = Field(default=None, ge=0)
+    weight: Optional[float] = Field(default=None, ge=0)
+    status: Optional[str] = "created"
+
+
+class WifiDisconnectionEventCreate(BaseModel):
+    feeder_id: str = "feeder-demo"
+    disconnected_minutes: int = Field(..., ge=0)
+    description: Optional[str] = None
+
+
+class NotificationCreate(BaseModel):
+    feeder_id: str = "feeder-demo"
+    message: str
+    notification_type: str = "info"
+    related_event_id: Optional[str] = None
