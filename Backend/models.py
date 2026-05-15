@@ -98,8 +98,9 @@ class Reading(Base):
     food_level = Column(Float, nullable=False)
     weight = Column(Float, nullable=True)
 
-    sensor_type = Column(String, default="load_cell")
-    description = Column(Text, nullable=True)
+    device_name = Column(String, nullable=True)
+    units = Column(String, nullable=True)
+    taken_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

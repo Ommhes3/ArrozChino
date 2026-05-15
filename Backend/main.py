@@ -47,7 +47,7 @@ def seed_initial_data():
                 is_active=True,
                 food_level=5.0,
                 food_limit=10.0,
-                price_per_donation=10.0,
+                price_per_donation=10000.0,
                 portion_per_donation=0.25,
                 stream_url="http://esp32cam.local/stream"
             )
