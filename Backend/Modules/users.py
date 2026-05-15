@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from database.database import get_db
 from models import User
-from schemas import UserCreate
+from schemas import UserCreate, UserLogin
 
 
 router = APIRouter()
@@ -52,20 +52,38 @@ def create_user(
     }
 
 
-@router.get("/users")
-def list_users(db: Session = Depends(get_db)):
-    users = db.query(User).all()
+@router.post("/users/login")
+def login_user(
+    request: UserLogin,
+    db: Session = Depends(get_db)
+):
+    user = (
+        db.query(User)
+        .filter(User.email == request.email)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Correo o contraseña incorrectos"
+        )
+
+    if user.password != request.password:
+        raise HTTPException(
+            status_code=401,
+            detail="Correo o contraseña incorrectos"
+        )
 
     return {
         "success": True,
-        "users": [
-            {
-                "user_id": user.user_id,
-                "name": user.name,
-                "email": user.email,
-                "role": user.role,
-                "created_at": user.created_at
-            }
-            for user in users
-        ]
+        "message": "Inicio de sesión exitoso",
+        "user": {
+            "user_id": user.user_id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if user.created_at else None
+        }
+    
     }

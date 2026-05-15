@@ -11,7 +11,10 @@ class UserCreate(BaseModel):
     password: str
     role: str = "donor"
 
-
+class UserLogin(BaseModel):
+    email: str
+    password: str
+    
 class FeederCreate(BaseModel):
     feeder_id: Optional[str] = None
     name: str
@@ -97,3 +100,5 @@ class NotificationCreate(BaseModel):
     message: str
     notification_type: str = "info"
     related_event_id: Optional[str] = None
+
+
