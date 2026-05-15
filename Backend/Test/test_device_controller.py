@@ -13,13 +13,22 @@ class FakeFeeder:
     stream_url = "http://esp32cam.local/stream"
 
 
+class FakeDonation:
+    donation_id = "donation-test"
+    feeder_id = "feeder-demo"
+
+
 class FakeDB:
     def __init__(self):
         self.items = []
 
     def get(self, model, item_id):
-        if item_id == "feeder-demo":
+        if model.__name__ == "Feeder" and item_id == "feeder-demo":
             return FakeFeeder()
+
+        if model.__name__ == "Donation" and item_id == "donation-test":
+            return FakeDonation()
+
         return None
 
     def add(self, item):
@@ -81,6 +90,8 @@ def test_activate_dispenser_success():
     assert result["feeder_id"] == "feeder-demo"
     assert result["donation_id"] == "donation-test"
     assert result["food_amount"] == 0.25
+    assert result["requested_food_amount"] == 0.25
+    assert result["dispensed_food_amount"] == 0.25
     assert result["status"] == "activated"
     assert len(db.items) == 1
 

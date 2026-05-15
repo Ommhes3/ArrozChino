@@ -23,7 +23,6 @@ class Feeder(Base):
     __tablename__ = "feeders"
 
     feeder_id = Column(String, primary_key=True, index=True)
-
     name = Column(String, nullable=False)
     location = Column(String, nullable=True)
 
@@ -42,6 +41,7 @@ class Feeder(Base):
     donations = relationship("Donation", back_populates="feeder")
     events = relationship("DeviceEvent", back_populates="feeder")
     readings = relationship("Reading", back_populates="feeder")
+
 
 class Donation(Base):
     __tablename__ = "donations"
@@ -93,15 +93,14 @@ class Reading(Base):
 
     reading_id = Column(String, primary_key=True, index=True)
 
-    feeder_id = Column(String, ForeignKey("feeders.feeder_id"), nullable=False, index=True)
+    feeder_id = Column(String, ForeignKey("feeders.feeder_id"), nullable=False)
 
     food_level = Column(Float, nullable=False)
     weight = Column(Float, nullable=True)
 
-    device_name = Column(String, nullable=True)
-    units = Column(String, default="kg")
+    sensor_type = Column(String, default="load_cell")
+    description = Column(Text, nullable=True)
 
-    taken_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     feeder = relationship("Feeder", back_populates="readings")

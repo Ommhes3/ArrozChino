@@ -12,7 +12,9 @@ from schemas import (
 from LogicPackage.device_controller import DeviceController
 
 
-router = APIRouter()
+router = APIRouter(
+    tags=["DeviceController"]
+)
 
 device_controller = DeviceController()
 
@@ -71,14 +73,20 @@ def activate_dispenser(
     )
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=404,
-            detail=result["message"]
-        )
+        db.rollback()
+
+        if result["message"] == "Comedero no encontrado":
+            raise HTTPException(
+                status_code=404,
+                detail=result["message"]
+            )
+
+        return result
 
     db.commit()
 
     return result
+
 
 # Endpoint de compatibilidad.
 # Para lecturas periódicas de la ESP32 usar POST /readings,
@@ -97,10 +105,15 @@ def register_sensor_reading(
     )
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=404,
-            detail=result["message"]
-        )
+        db.rollback()
+
+        if result["message"] == "Comedero no encontrado":
+            raise HTTPException(
+                status_code=404,
+                detail=result["message"]
+            )
+
+        return result
 
     db.commit()
 
