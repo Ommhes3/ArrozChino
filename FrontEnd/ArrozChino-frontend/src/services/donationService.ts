@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://192.168.130.33:8000";
 
 export type Donation = {
   donation_id: string;
