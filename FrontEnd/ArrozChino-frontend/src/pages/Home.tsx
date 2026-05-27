@@ -3,6 +3,7 @@ import Header from "../components/layout/Header";
 import Navbar from "../components/layout/Navbar";
 import LiveStreamCard from "../components/home/LiveStreamCard";
 import DonationPanel from "../components/home/DonationPanel";
+import FoodLevelCard from "../components/home/FoodLevelCard";
 import { getCurrentUser } from "../services/userService";
 import {
   calculateDonationStats,
@@ -13,7 +14,6 @@ import {
 const FEEDER_ID = "feeder-demo";
 
 export default function Home() {
-  const [isLive, setIsLive] = useState(true);
   const [donationsToday, setDonationsToday] = useState(0);
   const [myDonations, setMyDonations] = useState(0);
   const [rescuedCats] = useState(8);
@@ -77,13 +77,14 @@ export default function Home() {
         paddingBottom: "140px",
       }}
     >
-      <Header isLive={isLive} />
+      <Header />
 
       <LiveStreamCard
         videos={liveVideos}
         sleepingImageSrc="/logoDormido.png"
-        onLiveStatusChange={setIsLive}
       />
+
+      <FoodLevelCard />
 
       <DonationPanel
         donationsToday={donationsToday}
