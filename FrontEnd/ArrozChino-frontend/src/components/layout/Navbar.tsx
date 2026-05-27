@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 type NavItem = {
   label: string;
   href: string;
@@ -32,7 +34,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Impacto",
-    href: "/impacto",
+    href: "/impact",
     iconSrc: "/icono5.png",
     scale: 1.28,
   },
@@ -77,9 +79,9 @@ export default function Navbar({ active = "Inicio" }: NavbarProps) {
           const baseScale = item.scale ?? 1;
 
           return (
-            <a
+            <Link
               key={item.label}
-              href={item.href}
+              to={item.href}
               aria-label={item.label}
               style={{
                 position: "relative",
@@ -105,15 +107,16 @@ export default function Navbar({ active = "Inicio" }: NavbarProps) {
                   display: "block",
                   transform: `scale(${isActive ? baseScale + 0.08 : baseScale})`,
                   transformOrigin: "center",
-                  transition:
-                    "transform 180ms ease, filter 180ms ease",
+                  transition: "transform 180ms ease, filter 180ms ease",
                   filter: isActive
                     ? "drop-shadow(2px 2px 0px #000)"
                     : "drop-shadow(1px 1px 0px #000)",
                   cursor: "pointer",
                 }}
                 onMouseEnter={(event) => {
-                  event.currentTarget.style.transform = `scale(${baseScale + 0.35}) rotate(-4deg)`;
+                  event.currentTarget.style.transform = `scale(${
+                    baseScale + 0.35
+                  }) rotate(-4deg)`;
                   event.currentTarget.style.filter =
                     "drop-shadow(3px 3px 0px #000)";
                 }}
@@ -152,7 +155,7 @@ export default function Navbar({ active = "Inicio" }: NavbarProps) {
                   }}
                 />
               )}
-            </a>
+            </Link>
           );
         })}
       </div>
