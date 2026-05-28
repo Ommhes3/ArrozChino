@@ -44,7 +44,20 @@ def create_feeder(
 
     return {
         "success": True,
-        "feeder": feeder_to_dict(feeder)
+        "message": "Location/comedor creado correctamente",
+        "feeder": feeder_to_dict(feeder),
+        "device": {
+            "device_id": f"esp32-{feeder.feeder_id}",
+            "name": "ESP32 Comedero Inteligente",
+            "type": "ESP32",
+            "location_id": feeder.feeder_id,
+            "components": {
+                "esp32": True,
+                "dispenser": True,
+                "weight_sensor": True,
+                "food_level_sensor": True
+            }
+        }
     }
 
 
@@ -57,6 +70,70 @@ def list_feeders(db: Session = Depends(get_db)):
         "feeders": [
             feeder_to_dict(feeder)
             for feeder in feeders
+        ]
+    }
+
+
+@router.get("/feeders/{feeder_id}/ecosystem")
+def get_feeder_ecosystem(
+    feeder_id: str,
+    db: Session = Depends(get_db)
+):
+    feeder = db.get(Feeder, feeder_id)
+
+    if not feeder:
+        raise HTTPException(
+            status_code=404,
+            detail="Comedero no encontrado"
+        )
+
+    return {
+        "success": True,
+        "mode": "mock",
+        "message": "Ecosistema del comedero cargado en modo simulación",
+        "location": {
+            "location_id": feeder.feeder_id,
+            "name": feeder.name,
+            "description": feeder.location,
+            "is_active": feeder.is_active
+        },
+        "device": {
+            "device_id": f"esp32-{feeder.feeder_id}",
+            "name": "ESP32 Comedero Inteligente",
+            "type": "ESP32",
+            "location_id": feeder.feeder_id,
+            "status": "connected" if feeder.is_active else "inactive",
+            "mode": "mock"
+        },
+        "sensors": [
+            {
+                "sensor_id": "sensor-peso",
+                "name": "Sensor de peso",
+                "type": "weight",
+                "unit": "g",
+                "status": "simulated",
+                "device_id": f"esp32-{feeder.feeder_id}",
+                "chart_endpoint": f"/readings/chart?feeder_id={feeder.feeder_id}&sensor_type=peso"
+            },
+            {
+                "sensor_id": "sensor-nivel-comida",
+                "name": "Sensor de nivel de comida",
+                "type": "food_level",
+                "unit": "g",
+                "status": "simulated",
+                "device_id": f"esp32-{feeder.feeder_id}",
+                "chart_endpoint": f"/readings/chart?feeder_id={feeder.feeder_id}&sensor_type=nivel-comida"
+            }
+        ],
+        "actuators": [
+            {
+                "actuator_id": "dispensador-comida",
+                "name": "Dispensador de comida",
+                "type": "dispenser",
+                "status": "simulated",
+                "device_id": f"esp32-{feeder.feeder_id}",
+                "command_endpoint": "/device/dispenser/activate"
+            }
         ]
     }
 
@@ -107,20 +184,6 @@ def update_feeder(
         "feeder": feeder_to_dict(feeder)
     }
 
-
-def feeder_to_dict(feeder: Feeder) -> dict:
-    return {
-        "feeder_id": feeder.feeder_id,
-        "name": feeder.name,
-        "location": feeder.location,
-        "is_active": feeder.is_active,
-        "food_level": feeder.food_level,
-        "food_limit": feeder.food_limit,
-        "price_per_donation": feeder.price_per_donation,
-        "portion_per_donation": feeder.portion_per_donation,
-        "stream_url": feeder.stream_url,
-        "created_at": feeder.created_at
-    }
 
 def feeder_to_dict(feeder: Feeder) -> dict:
     return {

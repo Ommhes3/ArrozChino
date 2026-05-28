@@ -188,3 +188,61 @@ def get_readings(
         .limit(limit)
         .all()
     )
+
+
+@router.get("/readings/chart")
+def get_readings_for_chart(
+    feeder_id: str = Query(default="feeder-demo"),
+    sensor_type: str = Query(default="nivel-comida"),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    q = db.query(Reading).filter(Reading.feeder_id == feeder_id)
+
+    if sensor_type == "peso":
+        value_field = "weight"
+        title = "Sensor de peso"
+        unit = "g"
+    elif sensor_type == "nivel-comida":
+        value_field = "food_level"
+        title = "Sensor de nivel de comida"
+        unit = "g"
+    else:
+        value_field = "food_level"
+        title = "Sensor de nivel de comida"
+        unit = "g"
+
+    readings = (
+        q.order_by(Reading.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    readings = list(reversed(readings))
+
+    data = []
+
+    for reading in readings:
+        if value_field == "weight":
+            value = reading.weight
+        else:
+            value = reading.food_level
+
+        data.append({
+            "reading_id": reading.reading_id,
+            "label": reading.created_at.strftime("%H:%M") if reading.created_at else "",
+            "value": value,
+            "unit": unit,
+            "created_at": reading.created_at
+        })
+
+    return {
+        "success": True,
+        "mode": "mock",
+        "message": "Datos simulados para gráfica del sensor",
+        "feeder_id": feeder_id,
+        "sensor_type": sensor_type,
+        "title": title,
+        "unit": unit,
+        "data": data
+    }
