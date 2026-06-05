@@ -20,12 +20,12 @@ const char* outboundTopic = "ArrozChino/outbound";
 // ---------------- WIFI ----------------
 
 // Cambiar valores segun corresponda
-const char* ssid = "Lau";
-const char* password = "Laura272006";
+const char* ssid = "LABREDES";
+const char* password = "F0rmul4-1";
 
 // ---------------- API ----------------
 
-String BASE_URL = "http://10.149.252.42:8000/";
+String BASE_URL = "http://192.168.130.33:8000/";
 
 // ---------------- FEEDER ----------------
 
@@ -204,6 +204,9 @@ bool sendSingleSample() {
   if (!sent) {
     batchHandler.saveSample(json);
   }
+
+  // Publica la lectura por MQTT para que el frontend se actualice en tiempo real.
+  mqttManager.publishMessage(json);
 
   return sent;
 }
