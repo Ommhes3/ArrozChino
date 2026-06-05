@@ -8,6 +8,11 @@ import {
   calculateDonationStats,
   getDonations,
 } from "../services/donationService";
+import {
+  createFeeder,
+  getFeeders,
+  type Feeder,
+} from "../services/feederService";
 
 type Donation = {
   donation_id?: string;
@@ -33,7 +38,19 @@ export default function Impact() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [rescuedCats] = useState(8);
-  const [activeFeeders] = useState(1);
+
+  const [feeders, setFeeders] = useState<Feeder[]>([]);
+  const [feederForm, setFeederForm] = useState({
+    feeder_id: "",
+    name: "",
+    location: "",
+    food_limit: "10",
+    price_per_donation: "10000",
+    portion_per_donation: "0.25",
+    stream_url: "http://esp32cam.local/stream",
+  });
+  const [creatingFeeder, setCreatingFeeder] = useState(false);
+  const [feederMessage, setFeederMessage] = useState("");
 
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.role === "admin";
@@ -72,16 +89,81 @@ export default function Impact() {
     setChartData(buildDonationChartData(donations));
   }
 
+  async function loadFeeders() {
+    try {
+      const data = await getFeeders();
+      setFeeders(data);
+    } catch (error) {
+      console.error("Error cargando comederos:", error);
+    }
+  }
+
+  async function handleCreateFeeder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!feederForm.feeder_id.trim() || !feederForm.name.trim()) {
+      setFeederMessage("Debes ingresar el ID y el nombre del comedero.");
+      return;
+    }
+
+    try {
+      setCreatingFeeder(true);
+      setFeederMessage("");
+
+      await createFeeder({
+        feeder_id: feederForm.feeder_id.trim(),
+        name: feederForm.name.trim(),
+        location: feederForm.location.trim(),
+        food_limit: Number(feederForm.food_limit),
+        price_per_donation: Number(feederForm.price_per_donation),
+        portion_per_donation: Number(feederForm.portion_per_donation),
+        stream_url: feederForm.stream_url.trim(),
+      });
+
+      setFeederMessage("Comedero creado correctamente.");
+
+      setFeederForm({
+        feeder_id: "",
+        name: "",
+        location: "",
+        food_limit: "10",
+        price_per_donation: "10000",
+        portion_per_donation: "0.25",
+        stream_url: "http://esp32cam.local/stream",
+      });
+
+      await loadFeeders();
+    } catch (error) {
+      console.error("Error creando comedero:", error);
+
+      if (error instanceof Error) {
+        setFeederMessage(error.message);
+      } else {
+        setFeederMessage("No se pudo crear el comedero.");
+      }
+    } finally {
+      setCreatingFeeder(false);
+    }
+  }
+
   useEffect(() => {
     loadImpactStats().catch((error) => {
       console.error("Error cargando estadísticas de impacto:", error);
     });
+
+    if (isAdmin) {
+      loadFeeders();
+    }
   }, []);
 
   const averageDonation = useMemo(() => {
     if (totalDonations <= 0) return 0;
     return totalAmount / totalDonations;
   }, [totalAmount, totalDonations]);
+
+  const activeFeeders = feeders.filter(
+    (feeder) => feeder.is_active !== false
+  ).length;
 
   return (
     <main style={styles.main}>
@@ -125,7 +207,7 @@ export default function Impact() {
               title="Donaciones hoy"
               value={donationsToday}
               backgroundColor="#FFD6E8"
-              scale={1.95}
+              scale={1.25}
             />
 
             <StatCard
@@ -133,7 +215,7 @@ export default function Impact() {
               title="Donaciones totales"
               value={totalDonations}
               backgroundColor="#BEEBFF"
-              scale={1.95}
+              scale={1.25}
             />
 
             <StatCard
@@ -184,6 +266,201 @@ export default function Impact() {
             </div>
 
             <DonationBarChart data={chartData} />
+          </section>
+
+          <section style={styles.feederAdminCard}>
+            <div style={styles.chartHeader}>
+              <div>
+                <h3 style={styles.chartTitle}>Gestión de comederos</h3>
+                <p style={styles.chartSubtitle}>
+                  Crea nuevos comederos y consulta los que ya están registrados.
+                </p>
+              </div>
+
+              <img src="/icono1.png" alt="Comederos" style={styles.chartIcon} />
+            </div>
+
+            <form style={styles.feederForm} onSubmit={handleCreateFeeder}>
+              <div style={styles.formGrid}>
+                <label style={styles.formLabel}>
+                  ID del comedero
+                  <input
+                    style={styles.input}
+                    value={feederForm.feeder_id}
+                    onChange={(event) =>
+                      setFeederForm((prev) => ({
+                        ...prev,
+                        feeder_id: event.target.value,
+                      }))
+                    }
+                    placeholder="feeder-demo-2"
+                  />
+                </label>
+
+                <label style={styles.formLabel}>
+                  Nombre
+                  <input
+                    style={styles.input}
+                    value={feederForm.name}
+                    onChange={(event) =>
+                      setFeederForm((prev) => ({
+                        ...prev,
+                        name: event.target.value,
+                      }))
+                    }
+                    placeholder="Comedero norte"
+                  />
+                </label>
+
+                <label style={styles.formLabel}>
+                  Ubicación
+                  <input
+                    style={styles.input}
+                    value={feederForm.location}
+                    onChange={(event) =>
+                      setFeederForm((prev) => ({
+                        ...prev,
+                        location: event.target.value,
+                      }))
+                    }
+                    placeholder="Zona principal"
+                  />
+                </label>
+
+                <label style={styles.formLabel}>
+                  Límite de comida
+                  <input
+                    style={styles.input}
+                    type="number"
+                    value={feederForm.food_limit}
+                    onChange={(event) =>
+                      setFeederForm((prev) => ({
+                        ...prev,
+                        food_limit: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label style={styles.formLabel}>
+                  Precio por donación
+                  <input
+                    style={styles.input}
+                    type="number"
+                    value={feederForm.price_per_donation}
+                    onChange={(event) =>
+                      setFeederForm((prev) => ({
+                        ...prev,
+                        price_per_donation: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label style={styles.formLabel}>
+                  Porción por donación
+                  <input
+                    style={styles.input}
+                    type="number"
+                    step="0.01"
+                    value={feederForm.portion_per_donation}
+                    onChange={(event) =>
+                      setFeederForm((prev) => ({
+                        ...prev,
+                        portion_per_donation: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label style={styles.formLabelWide}>
+                  URL del stream
+                  <input
+                    style={styles.input}
+                    value={feederForm.stream_url}
+                    onChange={(event) =>
+                      setFeederForm((prev) => ({
+                        ...prev,
+                        stream_url: event.target.value,
+                      }))
+                    }
+                    placeholder="http://esp32cam.local/stream"
+                  />
+                </label>
+              </div>
+
+              {feederMessage && (
+                <p style={styles.feederMessage}>{feederMessage}</p>
+              )}
+
+              <button
+                type="submit"
+                style={{
+                  ...styles.createButton,
+                  opacity: creatingFeeder ? 0.75 : 1,
+                }}
+                disabled={creatingFeeder}
+              >
+                {creatingFeeder ? "Creando comedero..." : "Crear comedero"}
+              </button>
+            </form>
+
+            <div style={styles.feedersListHeader}>
+              <h4 style={styles.feedersListTitle}>Comederos registrados</h4>
+
+              <button
+                type="button"
+                style={styles.refreshButton}
+                onClick={loadFeeders}
+              >
+                Actualizar lista
+              </button>
+            </div>
+
+            {feeders.length === 0 ? (
+              <div style={styles.emptyChart}>
+                Todavía no hay comederos registrados o no se pudieron cargar.
+              </div>
+            ) : (
+              <div style={styles.feedersGrid}>
+                {feeders.map((feeder) => (
+                  <article key={feeder.feeder_id} style={styles.feederItem}>
+                    <div style={styles.feederItemHeader}>
+                      <img
+                        src="/icono1.png"
+                        alt="Comedero"
+                        style={styles.feederItemIcon}
+                      />
+
+                      <div>
+                        <strong style={styles.feederName}>{feeder.name}</strong>
+                        <span style={styles.feederId}>{feeder.feeder_id}</span>
+                      </div>
+                    </div>
+
+                    <div style={styles.feederInfoGrid}>
+                      <span>
+                        Ubicación: {feeder.location || "Sin ubicación"}
+                      </span>
+                      <span>
+                        Estado:{" "}
+                        {feeder.is_active === false ? "Inactivo" : "Activo"}
+                      </span>
+                      <span>
+                        Comida: {Number(feeder.food_level ?? 0).toFixed(0)} /{" "}
+                        {Number(feeder.food_limit ?? 0).toFixed(0)}
+                      </span>
+                      <span>
+                        Donación:{" "}
+                        {formatCurrency(
+                          Number(feeder.price_per_donation ?? 0)
+                        )}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </section>
       )}
@@ -538,6 +815,15 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "3px 3px 0px #000",
   },
 
+  feederAdminCard: {
+    marginTop: "18px",
+    backgroundColor: "#FFF7E8",
+    border: "4px solid black",
+    borderRadius: "26px",
+    padding: "18px",
+    boxShadow: "3px 3px 0px #000",
+  },
+
   chartHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -634,6 +920,150 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 800,
     color: "#4B5563",
     backgroundColor: "#FFF7E8",
+  },
+
+  feederForm: {
+    marginTop: "18px",
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "14px",
+  },
+
+  formLabel: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+    fontSize: "14px",
+    fontWeight: 900,
+    color: "black",
+  },
+
+  formLabelWide: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+    fontSize: "14px",
+    fontWeight: 900,
+    color: "black",
+    gridColumn: "1 / -1",
+  },
+
+  input: {
+    width: "100%",
+    border: "3px solid black",
+    borderRadius: "14px",
+    padding: "10px 12px",
+    fontSize: "15px",
+    fontWeight: 800,
+    outline: "none",
+    backgroundColor: "#FFFFFF",
+    boxSizing: "border-box",
+  },
+
+  feederMessage: {
+    margin: "14px 0 0",
+    padding: "10px 12px",
+    border: "3px solid black",
+    borderRadius: "14px",
+    backgroundColor: "#FFD6E8",
+    fontSize: "14px",
+    fontWeight: 900,
+    color: "black",
+  },
+
+  createButton: {
+    width: "100%",
+    marginTop: "16px",
+    border: "4px solid black",
+    backgroundColor: "#B9F871",
+    color: "black",
+    padding: "12px 16px",
+    borderRadius: "18px",
+    fontWeight: 900,
+    cursor: "pointer",
+    fontSize: "17px",
+    boxShadow: "3px 3px 0px #000",
+  },
+
+  feedersListHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "24px",
+    marginBottom: "14px",
+  },
+
+  feedersListTitle: {
+    margin: 0,
+    fontSize: "20px",
+    fontWeight: 900,
+    color: "black",
+  },
+
+  refreshButton: {
+    border: "3px solid black",
+    backgroundColor: "#BEEBFF",
+    color: "black",
+    padding: "8px 12px",
+    borderRadius: "14px",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "2px 2px 0px #000",
+  },
+
+  feedersGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "14px",
+  },
+
+  feederItem: {
+    backgroundColor: "#FFFFFF",
+    border: "4px solid black",
+    borderRadius: "22px",
+    padding: "16px",
+    boxShadow: "3px 3px 0px #000",
+  },
+
+  feederItemHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "12px",
+  },
+
+  feederItemIcon: {
+    width: "60px",
+    height: "60px",
+    objectFit: "contain",
+    filter: "drop-shadow(1px 1px 0px #000)",
+  },
+
+  feederName: {
+    display: "block",
+    fontSize: "18px",
+    fontWeight: 900,
+    color: "black",
+  },
+
+  feederId: {
+    display: "block",
+    marginTop: "4px",
+    fontSize: "13px",
+    fontWeight: 800,
+    color: "#4B5563",
+  },
+
+  feederInfoGrid: {
+    display: "grid",
+    gap: "8px",
+    fontSize: "13px",
+    fontWeight: 800,
+    color: "#374151",
   },
 
   donorCard: {

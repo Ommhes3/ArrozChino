@@ -13,7 +13,7 @@ const guestPhrases = [
   "¡Donar da suerte!",
   "¡Miau en vivo!",
   "¡Hay un perro infiltrado!",
-  "¿¡Sabias que Nicol es lesbiana!?",
+  "¿¡Sabias Nicol!? Es obvio",
 ];
 
 const userPhrases = [
@@ -24,7 +24,7 @@ const userPhrases = [
   "¡A donar, {name}!",
   "¡Gracias por volver, {name}!",
   "¡Hay un perro infiltrado, {name}!",
-  "¿¡Sabias!? Nicol es lesbiana, {name}",
+  "¿¡Sabias Nicol!? Es obvio, {name}",
 ];
 
 function getRandomItem(list: string[]) {
