@@ -20,12 +20,12 @@ const char* outboundTopic = "ArrozChino/outbound";
 // ---------------- WIFI ----------------
 
 // Cambiar valores segun corresponda
-const char* ssid = "FAMILIA SERRATO";
-const char* password = "L2109C18D18F";
+const char* ssid = "Lau";
+const char* password = "Laura272006";
 
 // ---------------- API ----------------
 
-String BASE_URL = "http://192.168.20.29:8000/";
+String BASE_URL = "http://10.149.252.42:8000/";
 
 // ---------------- FEEDER ----------------
 
@@ -41,6 +41,14 @@ const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = -18000;
 const int daylightOffset_sec = 0;
 
+
+// ---------------- SENSOR HX711 ----------------
+
+const int hx711DtPin = 16;
+const int hx711SckPin = 17;
+
+const float hx711CalibrationFactor = -334.959;
+
 // ---------------- SERVICIOS ----------------
 
 MqttManager mqttManager(
@@ -55,7 +63,10 @@ HttpService httpService(BASE_URL);
 
 Sensor sensor(
   feederId,
-  deviceName
+  deviceName,
+  hx711DtPin,
+  hx711SckPin,
+  hx711CalibrationFactor
 );
 
 Dispenser dispenser(
@@ -265,6 +276,8 @@ void handleMqttCommand(String command) {
 
 void setup() {
   Serial.begin(115200);
+
+  sensor.begin();
 
   dispenser.begin();
 
