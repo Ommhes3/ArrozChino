@@ -1,0 +1,15 @@
+.git
+.gitignore
+.vscode
+.env
+
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+node_modules
+dist
+
+FrontEnd/ArrozChino-frontend/node_modules
+FrontEnd/ArrozChino-frontend/dist

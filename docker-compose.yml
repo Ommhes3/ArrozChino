@@ -1,5 +1,6 @@
 services:
   api:
+    container_name: api
     build:
       context: .
       dockerfile: Docker/Dockerfile
@@ -13,6 +14,7 @@ services:
       - red-china
 
   db:
+    container_name: db
     image: postgres:17
     environment:
       - POSTGRES_USER=postgres
@@ -26,6 +28,18 @@ services:
       - "5432:5432"
     expose:
       - 5432 
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./FrontEnd/ArrozChino-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    networks:
+      - red-china
 
 volumes:
   pgdata:
